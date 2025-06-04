@@ -122,7 +122,6 @@ def main():
             "content": doc["content"],
             "contentVector": vector
         })
-
     upload_documents(docs_to_upload)
 
 
