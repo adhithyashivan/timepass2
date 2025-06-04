@@ -3,16 +3,18 @@
 
 # COMMAND ----------
 
+import openai
+from gremlin_python.process.traversal import TextP
 from gremlin_python.driver import client, serializer
 
 # Cosmos DB Config
 cosmos_endpoint = "wss://hackathon-cosmosdb.gremlin.cosmos.azure.com:443/"
-cosmos_key = "tJ2LkLMYwNmZqFkmtvMRz5AE2PkQXuoeNnXdHtoH34csrLECZIMSDvbQ1fDQ6JJ6BDaXWkYeQI1TACDbhp10cg=="
+cosmos_key = "REMOVED_SECRET"
 database = "graphrag"
 container = "hackathongraph"
 
 gremlin_client = client.Client(
-    f"{cosmos_endpoint}", 
+    f"{cosmos_endpoint}",
     "g",
     username=f"/dbs/{database}/colls/{container}",
     password=cosmos_key,
@@ -50,7 +52,6 @@ for r in results:
 
 # COMMAND ----------
 
-from gremlin_python.process.traversal import TextP
 
 keyword = 'login'  # Replace with input
 
@@ -96,6 +97,7 @@ gremlin_client.submit("g.E().valueMap(true)").all().result()
 
 # COMMAND ----------
 
+
 def build_graph_context(jira_id=None, cr_id=None, keyword=None):
     if jira_id:
         query = f"""g.V().has('id', '{jira_id}').bothE().otherV().path().by(valueMap(true))"""
@@ -125,24 +127,27 @@ def build_graph_context(jira_id=None, cr_id=None, keyword=None):
                     for k, v in node.items():
                         context += f"{k}: {v}\n"
                     context += "\n---\n"
-    
-    #Add Global Context: All Jira/CR/Confluence
+
+    # Add Global Context: All Jira/CR/Confluence
     context += "\n=== Global Jira Data ===\n"
-    all_jira = gremlin_client.submit("g.V().hasLabel('Jira').valueMap(true)").all().result()
+    all_jira = gremlin_client.submit(
+        "g.V().hasLabel('Jira').valueMap(true)").all().result()
     for r in all_jira:
         for k, v in r.items():
             context += f"{k}: {v}\n"
         context += "\n---\n"
 
     context += "\n=== Global CR Data ===\n"
-    all_cr = gremlin_client.submit("g.V().hasLabel('CR').valueMap(true)").all().result()
+    all_cr = gremlin_client.submit(
+        "g.V().hasLabel('CR').valueMap(true)").all().result()
     for r in all_cr:
         for k, v in r.items():
             context += f"{k}: {v}\n"
         context += "\n---\n"
 
     context += "\n=== Global Confluence Data ===\n"
-    all_conf = gremlin_client.submit("g.V().hasLabel('Confluence').valueMap(true)").all().result()
+    all_conf = gremlin_client.submit(
+        "g.V().hasLabel('Confluence').valueMap(true)").all().result()
     for r in all_conf:
         for k, v in r.items():
             context += f"{k}: {v}\n"
@@ -152,7 +157,6 @@ def build_graph_context(jira_id=None, cr_id=None, keyword=None):
 
 # COMMAND ----------
 
-import openai
 
 client = openai.AzureOpenAI(
     REMOVED_SECRET,
@@ -177,10 +181,10 @@ Answer:
 
 # Send to OpenAI
 response = client.chat.completions.create(
-            model="gpt-4-completion",
-            messages=[{"role": "user", "content": final_prompt}],
-            max_tokens=1000
-        )
+    model="gpt-4-completion",
+    messages=[{"role": "user", "content": final_prompt}],
+    max_tokens=1000
+)
 
 print(response.choices[0].message.content)
 
@@ -224,7 +228,7 @@ print(response.choices[0].message.content)
 #     final_prompt = f"""
 #     You are a helpful assistant answering questions based on the following GraphRAG context:
 #     {context}
-    
+
 #     User's question: {user_question}
 #     Answer:
 #     """

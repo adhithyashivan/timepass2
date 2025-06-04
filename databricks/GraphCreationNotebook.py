@@ -3,16 +3,18 @@
 
 # COMMAND ----------
 
+from pyspark.sql import SparkSession
+import pandas as pd
 from gremlin_python.driver import client, serializer
 
 # Cosmos DB Config
 cosmos_endpoint = "wss://hackathon-cosmosdb.gremlin.cosmos.azure.com:443/"
-cosmos_key = "tJ2LkLMYwNmZqFkmtvMRz5AE2PkQXuoeNnXdHtoH34csrLECZIMSDvbQ1fDQ6JJ6BDaXWkYeQI1TACDbhp10cg=="
+cosmos_key = "REMOVED_SECRET"
 database = "graphrag"
 container = "hackathongraph"
 
 gremlin_client = client.Client(
-    f"{cosmos_endpoint}", 
+    f"{cosmos_endpoint}",
     "g",
     username=f"/dbs/{database}/colls/{container}",
     password=cosmos_key,
@@ -30,14 +32,16 @@ spark.conf.set(
 
 # COMMAND ----------
 
-jira_df = spark.read.option("header", True).csv("wasbs://rawdata@barclayshackathontest.blob.core.windows.net/JIRA_Issues.csv")
+jira_df = spark.read.option("header", True).csv(
+    "wasbs://rawdata@barclayshackathontest.blob.core.windows.net/JIRA_Issues.csv")
 confluence_df = spark.read.option("header", True) \
     .option("delimiter", ",") \
     .option("quote", '"') \
     .option("escape", '"') \
     .option("multiLine", True) \
     .csv("wasbs://rawdata@barclayshackathontest.blob.core.windows.net/Confluence_Enriched.csv")
-cr_df = spark.read.option("header", True).csv("wasbs://rawdata@barclayshackathontest.blob.core.windows.net/Change_Requests.csv")
+cr_df = spark.read.option("header", True).csv(
+    "wasbs://rawdata@barclayshackathontest.blob.core.windows.net/Change_Requests.csv")
 
 # COMMAND ----------
 
@@ -92,12 +96,12 @@ gremlin_client.submit("g.E().drop()").all().result()
 
 # COMMAND ----------
 
-import pandas as pd
 
 # Insert Jira vertices
 for _, row in jira_pd.iterrows():
     jira_id = str(row['jira_id'])
-    jira_summary = str(row['jira_summary']).replace("'", "\\'").replace("\n", " ")
+    jira_summary = str(row['jira_summary']).replace(
+        "'", "\\'").replace("\n", " ")
     cr_id = str(row['cr_id']) if pd.notna(row['cr_id']) else ""
 
     gremlin_client.submit(f"""
@@ -112,7 +116,8 @@ for _, row in jira_pd.iterrows():
 for _, row in conf_pd.iterrows():
     conf_id = str(row['confluence_doc_id'])
     doc_topic = str(row['doc_topic']).replace("'", "\\'").replace("\n", " ")
-    doc_content = str(row['doc_content']).replace("'", "\\'").replace("\n", " ")
+    doc_content = str(row['doc_content']).replace(
+        "'", "\\'").replace("\n", " ")
     jira_id = str(row['jira_id']) if pd.notna(row['jira_id']) else ""
     cr_id = str(row['cr_id']) if pd.notna(row['cr_id']) else ""
 
@@ -240,36 +245,40 @@ gremlin_client.submit("g.V().drop()").all().result()
 
 # COMMAND ----------
 
-from pyspark.sql import SparkSession
-from gremlin_python.driver import client, serializer
-import pandas as pd
 
 spark = SparkSession.builder.appName("GraphRAGIngestion").getOrCreate()
 
 blob_container = "rawdata"
 blob_account = "barclayshackathontest"
-sas_token = "sp=racwdl&st=2025-05-31T17:31:00Z&se=2025-06-07T01:31:00Z&spr=https&sv=2024-11-04&sr=c&sig=JKsY%2BTJgtgeCctNHwkqFgc0USNz8fV8YWa%2F3Y1FFCSk%3D"  # Replace with actual SAS token
+# Replace with actual SAS token
+sas_token = "sp=racwdl&st=2025-05-31T17:31:00Z&se=2025-06-07T01:31:00Z&spr=https&sv=2024-11-04&sr=c&sig=JKsY%2BTJgtgeCctNHwkqFgc0USNz8fV8YWa%2F3Y1FFCSk%3D"
 
 # Configure access
-spark.conf.set(f"fs.azure.sas.{blob_container}.{blob_account}.blob.core.windows.net", sas_token)
+spark.conf.set(
+    f"fs.azure.sas.{blob_container}.{blob_account}.blob.core.windows.net", sas_token)
 
 # Load CSVs
-cr_main_df = spark.read.option("header", True).csv(f"wasbs://{blob_container}@{blob_account}.blob.core.windows.net/CR_Main_csv.csv").toPandas()
-ctask_df = spark.read.option("header", True).csv(f"wasbs://{blob_container}@{blob_account}.blob.core.windows.net/CR_CTasks_csv.csv").toPandas()
-jira_df = spark.read.option("header", True).csv(f"wasbs://{blob_container}@{blob_account}.blob.core.windows.net/JIRA_Issues_Detailed_csv.csv").toPandas()
-activity_df = spark.read.option("header", True).csv(f"wasbs://{blob_container}@{blob_account}.blob.core.windows.net/JIRA_Activities_csv.csv").toPandas()
-confluence_df = spark.read.option("header", True).csv(f"wasbs://{blob_container}@{blob_account}.blob.core.windows.net/Confluence_Pages_Detailed_csv.csv").toPandas()
+cr_main_df = spark.read.option("header", True).csv(
+    f"wasbs://{blob_container}@{blob_account}.blob.core.windows.net/CR_Main_csv.csv").toPandas()
+ctask_df = spark.read.option("header", True).csv(
+    f"wasbs://{blob_container}@{blob_account}.blob.core.windows.net/CR_CTasks_csv.csv").toPandas()
+jira_df = spark.read.option("header", True).csv(
+    f"wasbs://{blob_container}@{blob_account}.blob.core.windows.net/JIRA_Issues_Detailed_csv.csv").toPandas()
+activity_df = spark.read.option("header", True).csv(
+    f"wasbs://{blob_container}@{blob_account}.blob.core.windows.net/JIRA_Activities_csv.csv").toPandas()
+confluence_df = spark.read.option("header", True).csv(
+    f"wasbs://{blob_container}@{blob_account}.blob.core.windows.net/Confluence_Pages_Detailed_csv.csv").toPandas()
 
 print("Data loaded from Blob Storage!")
 
 # Cosmos DB Config
 cosmos_endpoint = "wss://hackathon-cosmosdb.gremlin.cosmos.azure.com:443/"
-cosmos_key = "tJ2LkLMYwNmZqFkmtvMRz5AE2PkQXuoeNnXdHtoH34csrLECZIMSDvbQ1fDQ6JJ6BDaXWkYeQI1TACDbhp10cg=="
+cosmos_key = "REMOVED_SECRET"
 database = "graphrag"
 container = "hackathongraph"
 
 gremlin_client = client.Client(
-    f"{cosmos_endpoint}", 
+    f"{cosmos_endpoint}",
     "g",
     username=f"/dbs/{database}/colls/{container}",
     password=cosmos_key,
@@ -279,6 +288,8 @@ gremlin_client = client.Client(
 print("Connected to Cosmos DB Graph!")
 
 # Helper Function to Format Properties
+
+
 def safe_props(row, columns):
     prop_list = []
     for col in columns:
@@ -287,12 +298,17 @@ def safe_props(row, columns):
     return ''.join(prop_list)
 
 # Helper Function to Check if Vertex Exists
+
+
 def vertex_exists(vertex_id):
-    result = gremlin_client.submit(f"g.V().has('id', '{vertex_id}').count()").all().result()
+    result = gremlin_client.submit(
+        f"g.V().has('id', '{vertex_id}').count()").all().result()
     return result[0] > 0
 
+
 # Create Team Nodes
-unique_teams = set(cr_main_df['CR_Team_Assignment_Group']).union(set(jira_df['JIRA_Team'])).union(set(confluence_df['Confluence_Team_Association']))
+unique_teams = set(cr_main_df['CR_Team_Assignment_Group']).union(set(
+    jira_df['JIRA_Team'])).union(set(confluence_df['Confluence_Team_Association']))
 for team in unique_teams:
     team_id = f"TEAM-{team.replace(' ', '_')}"
     if not vertex_exists(team_id):
@@ -306,8 +322,10 @@ for _, row in cr_main_df.iterrows():
     team_id = f"TEAM-{row['CR_Team_Assignment_Group'].replace(' ', '_')}"
     props = safe_props(row, cr_main_df.columns)
     if not vertex_exists(cr_id):
-        gremlin_client.submit(f"""g.addV('CR').property('id', '{cr_id}').property('vertexType', 'CR'){props}""").all().result()
-    gremlin_client.submit(f"""g.V().has('id', '{cr_id}').addE('BELONGS_TO').to(g.V().has('id', '{team_id}'))""").all().result()
+        gremlin_client.submit(
+            f"""g.addV('CR').property('id', '{cr_id}').property('vertexType', 'CR'){props}""").all().result()
+    gremlin_client.submit(
+        f"""g.V().has('id', '{cr_id}').addE('BELONGS_TO').to(g.V().has('id', '{team_id}'))""").all().result()
 
 # Create JIRA Nodes + BELONGS_TO
 for _, row in jira_df.iterrows():
@@ -315,8 +333,10 @@ for _, row in jira_df.iterrows():
     team_id = f"TEAM-{row['JIRA_Team'].replace(' ', '_')}"
     props = safe_props(row, jira_df.columns)
     if not vertex_exists(jira_id):
-        gremlin_client.submit(f"""g.addV('JIRA').property('id', '{jira_id}').property('vertexType', 'JIRA'){props}""").all().result()
-    gremlin_client.submit(f"""g.V().has('id', '{jira_id}').addE('BELONGS_TO').to(g.V().has('id', '{team_id}'))""").all().result()
+        gremlin_client.submit(
+            f"""g.addV('JIRA').property('id', '{jira_id}').property('vertexType', 'JIRA'){props}""").all().result()
+    gremlin_client.submit(
+        f"""g.V().has('id', '{jira_id}').addE('BELONGS_TO').to(g.V().has('id', '{team_id}'))""").all().result()
 
 # Create Confluence Nodes + BELONGS_TO
 for _, row in confluence_df.iterrows():
@@ -324,31 +344,39 @@ for _, row in confluence_df.iterrows():
     team_id = f"TEAM-{row['Confluence_Team_Association'].replace(' ', '_')}"
     props = safe_props(row, confluence_df.columns)
     if not vertex_exists(conf_id):
-        gremlin_client.submit(f"""g.addV('Confluence').property('id', '{conf_id}').property('vertexType', 'Confluence'){props}""").all().result()
-    gremlin_client.submit(f"""g.V().has('id', '{conf_id}').addE('BELONGS_TO').to(g.V().has('id', '{team_id}'))""").all().result()
+        gremlin_client.submit(
+            f"""g.addV('Confluence').property('id', '{conf_id}').property('vertexType', 'Confluence'){props}""").all().result()
+    gremlin_client.submit(
+        f"""g.V().has('id', '{conf_id}').addE('BELONGS_TO').to(g.V().has('id', '{team_id}'))""").all().result()
 
 # Create REFERS_TO, MENTIONS, and other edges
 for _, row in cr_main_df.iterrows():
     if pd.notna(row['Linked_Jira_ID']):
-        gremlin_client.submit(f"""g.V().has('id', '{row['CR_ID']}').addE('REFERS_TO').to(g.V().has('id', '{row['Linked_Jira_ID']}'))""").all().result()
+        gremlin_client.submit(
+            f"""g.V().has('id', '{row['CR_ID']}').addE('REFERS_TO').to(g.V().has('id', '{row['Linked_Jira_ID']}'))""").all().result()
     if pd.notna(row['Linked_Confluence_ID']):
-        gremlin_client.submit(f"""g.V().has('id', '{row['CR_ID']}').addE('REFERS_TO').to(g.V().has('id', '{row['Linked_Confluence_ID']}'))""").all().result()
+        gremlin_client.submit(
+            f"""g.V().has('id', '{row['CR_ID']}').addE('REFERS_TO').to(g.V().has('id', '{row['Linked_Confluence_ID']}'))""").all().result()
 
 for _, row in jira_df.iterrows():
     if pd.notna(row['CR_ID_Link_From_CSV_Example']):
-        gremlin_client.submit(f"""g.V().has('id', '{row['JIRA_ID']}').addE('MENTIONS').to(g.V().has('id', '{row['CR_ID_Link_From_CSV_Example']}'))""").all().result()
+        gremlin_client.submit(
+            f"""g.V().has('id', '{row['JIRA_ID']}').addE('MENTIONS').to(g.V().has('id', '{row['CR_ID_Link_From_CSV_Example']}'))""").all().result()
     if pd.notna(row['JIRA_Linked_Issue_ID_Target']) and pd.notna(row['JIRA_Link_Type']):
-        gremlin_client.submit(f"""g.V().has('id', '{row['JIRA_ID']}').addE('{row['JIRA_Link_Type']}').to(g.V().has('id', '{row['JIRA_Linked_Issue_ID_Target']}'))""").all().result()
+        gremlin_client.submit(
+            f"""g.V().has('id', '{row['JIRA_ID']}').addE('{row['JIRA_Link_Type']}').to(g.V().has('id', '{row['JIRA_Linked_Issue_ID_Target']}'))""").all().result()
 
 for _, row in confluence_df.iterrows():
     if pd.notna(row['Confluence_Linked_Jira_ID']):
         for j in str(row['Confluence_Linked_Jira_ID']).split(';'):
             if j:
-                gremlin_client.submit(f"""g.V().has('id', '{row['Confluence_ID']}').addE('REFERS_TO').to(g.V().has('id', '{j}'))""").all().result()
+                gremlin_client.submit(
+                    f"""g.V().has('id', '{row['Confluence_ID']}').addE('REFERS_TO').to(g.V().has('id', '{j}'))""").all().result()
     if pd.notna(row['Confluence_Linked_CR_ID']):
         for c in str(row['Confluence_Linked_CR_ID']).split(';'):
             if c:
-                gremlin_client.submit(f"""g.V().has('id', '{row['Confluence_ID']}').addE('REFERS_TO').to(g.V().has('id', '{c}'))""").all().result()
+                gremlin_client.submit(
+                    f"""g.V().has('id', '{row['Confluence_ID']}').addE('REFERS_TO').to(g.V().has('id', '{c}'))""").all().result()
 
 print("Data loaded and hierarchical ingestion complete! 🚀")
 
@@ -363,4 +391,3 @@ for e in gremlin_client.submit("g.E().valueMap(true)").all().result():
     print(e)
 
 # COMMAND ----------
-
