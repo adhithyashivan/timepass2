@@ -144,7 +144,7 @@ for i in tqdm(range(0, len(all_chunks), BATCH_SIZE)):
 
 
 endpoint = "https://graphrag-aisearch-hackathon.search.windows.net"
-key = "DcKMyEEXGlGebvWMixtMYm4xMKjtKUyhnNxQzRNxqkAzSeBgRV4M"
+key = "REMOVED_SECRET"
 index_name = "graphrag-index"
 
 client = SearchIndexClient(endpoint, AzureKeyCredential(key))
