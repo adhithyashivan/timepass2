@@ -1,0 +1,15 @@
+{
+    "scriptFile": "__init__.py",
+    "bindings": [
+      {
+        "type": "cosmosDBTrigger",
+        "name": "documents",
+        "direction": "in",
+        "databaseName": "yourGraphDatabase", // Replace with your DB Name
+        "collectionName": "yourGraphContainer", // Replace with your Graph Container Name
+        "connectionStringSetting": "CosmosDbConnectionString", // App Setting name for Cosmos DB connection
+        "leaseCollectionName": "leases", // Name of the container to store leases
+        "createLeaseCollectionIfNotExists": true
+      }
+    ]
+  }
